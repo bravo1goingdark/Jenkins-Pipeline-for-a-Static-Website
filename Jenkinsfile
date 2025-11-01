@@ -12,13 +12,19 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building static site...'
-                sh 'mkdir -p build && cp -r * build/'
+                echo '🏗️ Building static site...'
+                sh '''
+                    rm -rf build
+                    mkdir build
+                    shopt -s extglob
+                    cp -r !(build) build/
+                '''
             }
         }
 
         stage('Deploy to S3') {
             steps {
+                echo '🚀 Uploading to S3...'
                 withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
                     s3Upload(
                         bucket: 's3-jenkins-static',
@@ -31,7 +37,11 @@ pipeline {
     }
 
     post {
-        success { echo '✅ Deployment successful!' }
-        failure { echo '❌ Deployment failed.' }
+        success {
+            echo '✅ Deployment successful!'
+        }
+        failure {
+            echo '❌ Deployment failed.'
+        }
     }
 }
