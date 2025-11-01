@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'ap-south-1'
+        S3_BUCKET = 's3-jenkins-static'  
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '📦 Cloning repository...'
+                git branch: 'main', url: 'https://github.com/bravo1goingdark/Jenkins-Pipeline-for-a-Static-Website'
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo '🔍 Running HTML and CSS lint checks...'
+                sh '''
+                npm install -g htmlhint csslint
+                htmlhint .
+                csslint .
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo '🏗️ Building static site...'
+                sh '''
+                mkdir -p build
+                cp -r * build/
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '🚀 Deploying to S3...'
+                withAWS(region: "${AWS_REGION}", credentials: 'aws-creds') {
+                    s3Upload(bucket: "${S3_BUCKET}", path: '/', workingDir: 'build/')
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deployment Successful!'
+        }
+        failure {
+            echo '❌ Deployment Failed. Check Jenkins logs.'
+        }
+    }
+}
