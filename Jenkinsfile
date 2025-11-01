@@ -13,7 +13,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building static site...'
-                sh 'mkdir -p build && cp -r * build/'
+                sh '''
+                    rm -rf build
+                    mkdir build
+                    for item in *; do
+                        [ "$item" = "build" ] && continue
+                        cp -r "$item" build/
+                    done
+                '''
             }
         }
 
@@ -27,10 +34,11 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment successful!'
+            echo 'Deployment successful!'
         }
         failure {
-            echo '❌ Build failed.'
+            echo 'Build failed.'
         }
     }
 }
+
