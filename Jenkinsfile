@@ -13,32 +13,25 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building static site...'
-                sh '''
-                    rm -rf build
-                    mkdir build
-                    for item in *; do
-                        [ "$item" = "build" ] && continue
-                        cp -r "$item" build/
-                    done
-                '''
+                sh 'mkdir -p build && cp -r * build/'
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to S3') {
             steps {
-                echo 'Deploying static site...'
-                sh 'aws s3 sync build/ s3://your-bucket-name --delete'
+                withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                    s3Upload(
+                        bucket: 's3-jenkins-static',
+                        includePathPattern: '**/*',
+                        workingDir: 'build'
+                    )
+                }
             }
         }
     }
 
     post {
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Build failed.'
-        }
+        success { echo '✅ Deployment successful!' }
+        failure { echo '❌ Deployment failed.' }
     }
 }
-
