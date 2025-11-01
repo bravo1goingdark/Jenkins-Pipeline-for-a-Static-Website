@@ -13,12 +13,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo '🏗️ Building static site...'
-                sh '''
-                    rm -rf build
-                    mkdir build
-                    shopt -s extglob
-                    cp -r !(build) build/
-                '''
+                sh 'rm -rf build && mkdir build && find . -maxdepth 1 ! -name build ! -name . -exec cp -r {} build/ \\;'
             }
         }
 
